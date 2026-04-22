@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICEMAN — May 15</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ice: #d4f1ff;
+            --ice-deep: #7ec8e3;
+            --ice-shadow: #2a5d7a;
+            --gold: #ffd700;
+            --gold-deep: #daa520;
+            --gold-bright: #fff3a0;
+            --night: #060a14;
+        }
+
+        body {
+            overflow: hidden;
+            background: var(--night);
+            font-family: 'Inter', sans-serif;
+            cursor: crosshair;
+        }
+
+        /* Frost Overlay */
+        .frost-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+            canvas {
+                width: 100%;
+                height: 100%;
+                filter: blur(0.3px);
+            }
+        }
+
+        /* Main UI */
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3vh 4vw;
+        }
+
+        .header {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .album-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2.5rem, 8vw, 6rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--ice) 0%, var(--ice-deep) 30%, var(--gold) 60%, var(--gold-bright) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            text-shadow: 0 0 40px rgba(212, 241, 255, 0.15);
+            position: relative;
+            animation: iceGlow 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes iceGlow {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.15); }
+        }
+
+        .artist-name {
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            color: rgba(212, 241, 255, 0.5);
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+
+        /* Countdown */
+        .countdown-container {
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .countdown {
+            display: flex;
+            gap: clamp(1rem, 3vw, 2.5rem);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .time-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .time-digit {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(2rem, 6vw, 4.5rem);
+            font-weight: 700;
+            color: var(--ice);
+            text-shadow: 0 0 20px rgba(126, 200, 227, 0.5), 0 0 60px rgba(126, 200, 227, 0.2);
+            min-width: 2ch;
+            position: relative;
+        }
+
+        .time-digit.gold-shift {
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 215, 0, 0.2);
+        }
+
+        .time-label {
+            font-size: clamp(0.6rem, 1.2vw, 0.85rem);
+            color: rgba(212, 241, 255, 0.4);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+
+        /* Progress bar */
+        .progress-container {
+            width: min(500px, 80vw);
+            margin: 1.5rem auto 0;
+            pointer-events: auto;
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: rgba(212, 241, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--ice-deep), var(--gold));
+            border-radius: 3px;
+            transition: width 1s ease;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .melt-status {
+            font-size: 0.75rem;
+            color: rgba(212, 241, 255, 0.35);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-top: 0.75rem;
+            text-align: center;
+        }
+
+        /* Interaction hint */
+        .hint {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: rgba(212, 241, 255, 0.2);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            pointer-events: none;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Released state */
+        .released-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: var(--night);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: goldFlashIn 2s ease;
+        }
+
+        .released-overlay.active {
+            display: flex;
+        }
+
+        @keyframes goldFlashIn {
+            0% { background: var(--gold); opacity: 0; }
+            30% { background: var(--gold); opacity: 1; }
+            100% { background: var(--night); }
+        }
+
+        .released-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(3rem, 10vw, 8rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--gold), var(--gold-bright), var(--gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 0.1em;
+            animation: goldPulse 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes goldPulse {
+            0% { filter: brightness(1) drop-shadow(0 0 20px rgba(255, 215, 0, 0.4)); }
+            100% { filter: brightness(1.3) drop-shadow(0 0 40px rgba(255, 215, 0, 0.8)); }
+        }
+
+        .released-sub {
+            font-size: clamp(0.9rem, 2vw, 1.3rem);
+            color: rgba(255, 215, 0, 0.6);
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            margin-top: 1rem;
+        }
+
+        /* Loading */
+        .loading {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: var(--night);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loading-text {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: var(--ice);
+            letter-spacing: 0.3em;
+            animation: iceGlow 2s ease-in-out infinite alternate;
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 2px;
+            background: rgba(212, 241, 255, 0.1);
+            margin-top: 1.5rem;
+            overflow: hidden;
+        }
+
+        .loading-fill {
+            height: 100%;
+            background: var(--ice);
+            animation: loadSlide 2s ease-in-out infinite;
+        }
+
+        @keyframes loadSlide {
+            0% { width: 0; margin-left: 0; }
+            50% { width: 100%; margin-left: 0; }
+            100% { width: 0; margin-left: 100%; }
+        }
+
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
+
+        canvas.three-canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="loading-text">ICEMAN</div>
+        <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+
+    <!-- Frost Overlay -->
+    <div class="frost-layer" id="frost-layer">
+        <canvas id="frost-canvas"></canvas>
+    </div>
+
+    <!-- Three.js Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+        <div class="header">
+            <h1 class="album-title">ICEMAN</h1>
+            <p class="artist-name">Dropping May 15, 2026</p>
+        </div>
+
+        <div class="countdown-container">
+            <div class="countdown" id="countdown">
+                <div class="time-unit">
+                    <span class="time-digit" id="days">00</span>
+                    <span class="time-label">Days</span>
+                </div>
+                <div class="time-unit">
+                    <span class="time-digit" id="hours">00</span>
+                    <span class="time-label">Hours</span>
+                </div>
+                <div class="time-unit">
+                    <span class="time-digit" id="minutes">00</span>
+                    <span class="time-label">Minutes</span>
+                </div>
+                <div class="time-unit">
+                    <span class="time-digit" id="seconds">00</span>
+                    <span class="time-label">Seconds</span>
+                </div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <p class="melt-status" id="melt-status">The ice is melting...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interaction Hint -->
+    <div class="hint" id="hint">Hover to heat · Click to crack</div>
+
+    <!-- Released Overlay -->
+    <div class="released-overlay" id="released-overlay">
+        <h2 class="released-title">ICEMAN</h2>
+        <p class="released-sub">Out Now — Listen Everywhere</p>
+    </div>
+
+    <!-- Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+
+        // ─── Configuration ───
+        const RELEASE_DATE = new Date('2026-05-15T00:00:00Z');
+        const START_DATE = new Date('2026-03-01T00:00:00Z'); // Campaign start
+        const TOTAL_DURATION = RELEASE_DATE - START_DATE;
+
+        // ─── Scene Setup ───
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x060a14);
+        scene.fog = new THREE.FogExp2(0x060a14, 0.02);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, 6);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // ─── Controls ───
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enableZoom = true;
+        controls.minDistance = 3;
+        controls.maxDistance = 12;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+
+        // ─── Lighting ───
+        // Cold ambient
+        scene.add(new THREE.AmbientLight(0x2a5d7a, 0.6));
+
+        // Icy key light
+        const keyLight = new THREE.DirectionalLight(0xb8e4f0, 1.5);
+        keyLight.position.set(3, 5, 4);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        scene.add(keyLight);
+
+        // Cold fill
+        const fillLight = new THREE.PointLight(0x7ec8e3, 0.8, 15);
+        fillLight.position.set(-3, 2, -2);
+        scene.add(fillLight);
+
+        // Gold rim light
+        const rimLight = new THREE.DirectionalLight(0xffd700, 0.6);
+        rimLight.position.set(-2, 3, -4);
+        scene.add(rimLight);
+
+        // Warm under-glow for melt pool
+        const meltLight = new THREE.PointLight(0xffaa44, 0.4, 5);
+        meltLight.position.set(0, -1.5, 0);
+        scene.add(meltLight);
+
+        // ─── Ice Material Shader ───
+        const iceVertexShader = `
+            varying vec3 vPosition;
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+            varying vec2 vUv;
+
+            uniform float uTime;
+            uniform float uMeltProgress;
+            uniform float uCracks;
+
+            // Simplex noise function
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
+            vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+            float snoise(vec3 v) {
+                const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+                const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                vec3 i = floor(v + dot(v, C.yyy));
+                vec3 x0 = v - i + dot(i, C.xxx);
+                vec3 g = step(x0.yzx, x0.xyz);
+                vec3 l = 1.0 - g;
+                vec3 i1 = min(g.xyz, l.zxy);
+                vec3 i2 = max(g.xyz, l.zxy);
+                vec3 x1 = x0 - i1 + C.xxx;
+                vec3 x2 = x0 - i2 + C.yyy;
+                vec3 x3 = x0 - D.yyy;
+                i = mod289(i);
+                vec4 p = permute(permute(permute(
+                    i.z + vec4(0.0, i1.z, i2.z, 1.0))
+                    + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+                    + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                float n_ = 0.142857142857;
+                vec3 ns = n_ * D.wyz - D.xzx;
+                vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                vec4 x_ = floor(j * ns.z);
+                vec4 y_ = floor(j - 7.0 * x_);
+                vec4 x = x_ * ns.x + ns.yyyy;
+                vec4 y = y_ * ns.x + ns.yyyy;
+                vec4 h = 1.0 - abs(x) - abs(y);
+                vec4 b0 = vec4(x.xy, y.xy);
+                vec4 b1 = vec4(x.zw, y.zw);
+                vec4 s0 = floor(b0)*2.0 + 1.0;
+                vec4 s1 = floor(b1)*2.0 + 1.0;
+                vec4 sh = -step(h, vec4(0.0));
+                vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+                vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+                vec3 p0 = vec3(a0.xy, h.x);
+                vec3 p1 = vec3(a0.zw, h.y);
+                vec3 p2 = vec3(a1.xy, h.z);
+                vec3 p3 = vec3(a1.zw, h.w);
+                vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+                p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+                vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                m = m * m;
+                return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+            }
+
+            void main() {
+                vUv = uv;
+                vNormal = normalize(normalMatrix * normal);
+                vec3 pos = position;
+
+                // Melting effect - round the cube
+                float noise = snoise(pos * 3.0 + uTime * 0.1) * 0.5 + 0.5;
+
+                // As it melts:
+                // 1. Edges get rounded
+                // 2. Sides shrink toward center
+                // 3. Irregular surface forms
+                float meltFactor = uMeltProgress * 0.6;
+
+                // Round edges
+                vec3 absPos = abs(pos);
+                float edgeDist = max(max(absPos.x, absPos.y), absPos.z);
+                edgeDist = smoothstep(0.0, 1.0, edgeDist);
+                pos += normal * (noise * meltFactor * 0.15);
+
+                // Scale down as melting
+                float scale = 1.0 - uMeltProgress * 0.5;
+                pos *= scale;
+
+                // Bottom melts faster - water forms
+                if (pos.y < 0.0) {
+                    pos.y *= 1.0 - uMeltProgress * 0.3;
+                    pos.y -= uMeltProgress * 0.2;
+                }
+
+                // Crack displacement
+                float crackNoise = snoise(pos * 5.0);
+                float crackAmount = uCracks * smoothstep(0.3, 0.7, abs(crackNoise));
+                pos += normal * crackAmount * 0.02;
+
+                vPosition = (modelMatrix * vec4(pos, 1.0)).xyz;
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                vViewPosition = -mvPosition.xyz;
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        const iceFragmentShader = `
+            varying vec3 vPosition;
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+            varying vec2 vUv;
+
+            uniform float uTime;
+            uniform float uMeltProgress;
+            uniform float uRevealProgress;
+            uniform float uCracks;
+            uniform vec3 uCameraPosition;
+
+            float fresnel(float cosTheta, float power) {
+                return pow(abs(1.0 - cosTheta), power);
+            }
+
+            void main() {
+                vec3 viewDirection = normalize(vViewPosition);
+                vec3 normal = normalize(vNormal);
+                float cosTheta = max(dot(normal, viewDirection), 0.0);
+
+                // Ice color
+                vec3 iceWhite = vec3(0.95, 0.98, 1.0);
+                vec3 iceBlue = vec3(0.49, 0.78, 0.89);
+                vec3 iceDeep = vec3(0.16, 0.36, 0.48);
+                vec3 iceShadow = vec3(0.04, 0.05, 0.10);
+                vec3 iceTransparent = vec3(0.85, 0.93, 0.97);
+
+                // Gold color for revealed core
+                vec3 goldBright = vec3(1.0, 0.95, 0.63);
+                vec3 goldMain = vec3(1.0, 0.84, 0.0);
+                vec3 goldDark = vec3(0.85, 0.65, 0.12);
+
+                // Fresnel effect for ice
+                float fresnelFactor = fresnel(cosTheta, 2.5);
+
+                // Inner glow as gold reveals
+                float goldReveal = smoothstep(0.3, 1.0, uRevealProgress);
+                float innerGlow = (1.0 - cosTheta * cosTheta) * goldReveal;
+
+                // Surface color
+                vec3 surfaceColor = mix(iceDeep, iceWhite, fresnelFactor);
+                surfaceColor = mix(surfaceColor, iceTransparent, fresnelFactor * 0.6);
+                surfaceColor = mix(surfaceColor, goldMain, innerGlow * 0.7);
+
+                // Specular highlights (icy)
+                vec3 halfVector = normalize(normalize(vec3(3.0, 5.0, 4.0)) + viewDirection);
+                float specAngle = max(dot(normal, halfVector), 0.0);
+                float specular = pow(specAngle, 128.0) * 1.5;
+
+                // Gold specular
+                vec3 goldHalf = normalize(normalize(vec3(-2.0, 3.0, -4.0)) + viewDirection);
+                float goldSpecAngle = max(dot(normal, goldHalf), 0.0);
+                float goldSpecular = pow(goldSpecAngle, 64.0) * goldReveal * 2.0;
+
+                vec3 color = surfaceColor * 0.7 + specular * iceWhite * 0.5 + goldSpecular * goldBright;
+                color += iceShadow * (1.0 - cosTheta) * 0.15;
+
+                // Crack lines
+                float crackPattern = abs(fract(vPosition.x * 5.0 + vPosition.y * 3.0) - 0.5) * 2.0;
+                float crackLine = smoothstep(0.98, 1.0, crackPattern) * uCracks;
+                color = mix(color, iceShadow, crackLine * 0.5);
+
+                // Caustic light pattern inside
+                float causticPattern = sin(vPosition.x * 10.0 + uTime) * sin(vPosition.z * 10.0 + uTime * 0.7) * 0.5 + 0.5;
+                color += iceBlue * causticPattern * 0.05 * (1.0 - uMeltProgress);
+
+                // Final alpha for ice transparency
+                float alpha = mix(0.65, 0.95, fresnelFactor);
+                alpha = mix(alpha, 1.0, goldReveal);
+                alpha = mix(alpha, 0.0, uMeltProgress * 0.2); // Gets clearer as it melts
+
+                gl_FragColor = vec4(color, min(alpha, 0.92));
+            }
+        `;
+
+        // ─── Ice Material ───
+        const iceUniforms = {
+            uTime: { value: 0 },
+            uMeltProgress: { value: 0 },
+            uRevealProgress: { value: 0 },
+            uCracks: { value: 0 },
+            uCameraPosition: { value: camera.position }
+        };
+
+        const iceMaterial = new THREE.ShaderMaterial({
+            vertexShader: iceVertexShader,
+            fragmentShader: iceFragmentShader,
+            uniforms: iceUniforms,
+            transparent: true,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        // ─── Ice Cube Mesh ───
+        const iceGeometry = new THREE.BoxGeometry(1.8, 1.8, 1.8, 64, 64, 64);
+        const iceCube = new THREE.Mesh(iceGeometry, iceMaterial);
+        iceCube.position.y = 0.5;
+        iceCube.castShadow = true;
+        scene.add(iceCube);
+
+        // ─── Gold Core (Inner Cube) ───
+        const goldGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7, 32, 32, 32);
+        const goldMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xffd700,
+            metalness: 1.0,
+            roughness: 0.15,
+            emissive: 0xffaa00,
+            emissiveIntensity: 0.2,
+            envMapIntensity: 1.5,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.05
+        });
+        const goldCore = new THREE.Mesh(goldGeometry, goldMaterial);
+        goldCore.position.y = 0.5;
+        goldCore.castShadow = true;
+        scene.add(goldCore);
+
+        // ─── Meltwater Pool (Animated Plane) ───
+        const poolGeometry = new THREE.CircleGeometry(2.5, 64);
+        const poolMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x1a3040,
+            metalness: 0.4,
+            roughness: 0.1,
+            transparent: true,
+            opacity: 0.7,
+            envMapIntensity: 0.8,
+            clearcoat: 0.8
+        });
+        const meltPool = new THREE.Mesh(poolGeometry, poolMaterial);
+        meltPool.rotation.x = -Math.PI / 2;
+        meltPool.position.y = -0.7;
+        meltPool.receiveShadow = true;
+        scene.add(meltPool);
+
+        // ─── Water Ripple Ring Effect ───
+        const rippleGeometry = new THREE.RingGeometry(0, 0, 64);
+        const rippleMaterial = new THREE.MeshBasicMaterial({
+            color: 0x7ec8e3,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide
+        });
+        const rippleRing = new THREE.Mesh(rippleGeometry, rippleMaterial);
+        rippleRing.rotation.x = -Math.PI / 2;
+        rippleRing.position.y = -0.6;
+        scene.add(rippleRing);
+
+        // ─── Floating Ice Particles ───
+        const particleCount = 150;
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        const particleSizes = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            particlePositions[i3] = (Math.random() - 0.5) * 8;
+            particlePositions[i3 + 1] = (Math.random() - 0.5) * 6;
+            particlePositions[i3 + 2] = (Math.random() - 0.5) * 8;
+            particleSizes[i] = Math.random() * 0.03 + 0.005;
+        }
+
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        particleGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xb8e4f0,
+            size: 0.02,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+
+        // ─── Post Processing ───
+        const composer = new EffectComposer(renderer);
+
+        // Render pass
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        // Bloom pass (glow)
+        const bloomPass = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.4,   // strength
+            0.8,   // radius
+            0.8    // threshold
+        );
+        composer.addPass(bloomPass);
+
+        // Custom chromatic aberration
+        const chromaticAberrationShader = {
+            uniforms: {
+                tDiffuse: { value: null },
+                uOffset: { value: 0.003 },
+                uMeltProgress: { value: 0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D tDiffuse;
+                uniform float uOffset;
+                uniform float uMeltProgress;
+                varying vec2 vUv;
+
+                void main() {
+                    vec4 color = texture2D(tDiffuse, vUv);
+                    vec4 cr = texture2D(tDiffuse, vUv + vec2(uOffset, 0.0));
+                    vec4 cg = texture2D(tDiffuse, vUv);
+                    vec4 cb = texture2D(tDiffuse, vUv - vec2(uOffset, 0.0));
+                    gl_FragColor = vec4(cr.r, cg.g, cb.b, 1.0);
+                    gl_FragColor += color * 0.5;
+                    gl_FragColor *= 0.8 + uMeltProgress * 0.2;
+                }
+            `
+        };
+        const chromaticPass = new ShaderPass(chromaticAberrationShader);
+        composer.addPass(chromaticPass);
+
+        // ─── Countdown Logic ───
+        let currentMeltProgress = 0;
+        let currentRevealProgress = 0;
+        let currentCracks = 0;
+        let mouseHeat = { x: 0, y: 0, active: false };
+        let lastCrackTime = 0;
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = RELEASE_DATE - now;
+
+            if (distance <= 0) {
+                // Released!
+                document.getElementById('days').textContent = '00';
+                document.getElementById('hours').textContent = '00';
+                document.getElementById('minutes').textContent = '00';
+                document.getElementById('seconds').textContent = '00';
+                document.querySelectorAll('.time-digit').forEach(el => el.classList.add('gold-shift'));
+                document.getElementById('progress-fill').style.width = '100%';
+                document.getElementById('melt-status').textContent = 'ICEMAN IS OUT NOW!';
+                document.getElementById('hint').style.display = 'none';
+
+                setTimeout(() => {
+                    document.getElementById('released-overlay').classList.add('active');
+                }, 500);
+
+                currentMeltProgress = 1;
+                currentRevealProgress = 1;
+                return true;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+
+            // Calculate progress
+            const elapsed = now - START_DATE;
+            const progress = Math.max(0, Math.min(1, elapsed / TOTAL_DURATION));
+
+            currentMeltProgress = progress;
+            currentRevealProgress = progress > 0.5 ? (progress - 0.5) * 2 : 0;
+            currentCracks = progress > 0.6 ? (progress - 0.6) * 2.5 : 0;
+
+            // Update UI
+            document.getElementById('progress-fill').style.width = `${progress * 100}%`;
+
+            if (progress > 0.9) {
+                document.getElementById('melt-status').textContent = 'The gold is almost free...';
+            } else if (progress > 0.7) {
+                document.getElementById('melt-status').textContent = 'The ice is cracking...';
+            } else if (progress > 0.3) {
+                document.getElementById('melt-status').textContent = 'Something golden is surfacing...';
+            } else {
+                document.getElementById('melt-status').textContent = 'The ice is melting...';
+            }
+
+            return false;
+        }
+
+        // ─── Mouse Interaction ───
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            // Heat effect
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(iceCube);
+            mouseHeat.active = intersects.length > 0;
+            mouseHeat.x = e.clientX;
+            mouseHeat.y = e.clientY;
+        });
+
+        document.addEventListener('click', (e) => {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(iceCube);
+
+            if (intersects.length > 0 && Date.now() - lastCrackTime > 300) {
+                currentCracks = Math.min(1, currentCracks + 0.15);
+                lastCrackTime = Date.now();
+
+                // Spawn crack particles at click point
+                spawnCrackParticles(intersects[0].point);
+            }
+        });
+
+        document.addEventListener('dblclick', () => {
+            // Reset orbit to default
+            controls.reset();
+        });
+
+        // ─── Crack Particles ───
+        function spawnCrackParticles(position) {
+            const count = 20;
+            const crackGeo = new THREE.BufferGeometry();
+            const crackPos = new Float32Array(count * 3);
+            const crackVel = [];
+
+            for (let i = 0; i < count; i++) {
+                crackPos[i * 3] = position.x;
+                crackPos[i * 3 + 1] = position.y;
+                crackPos[i * 3 + 2] = position.z;
+                crackVel.push({
+                    x: (Math.random() - 0.5) * 0.05,
+                    y: -Math.random() * 0.05 - 0.02,
+                    z: (Math.random() - 0.5) * 0.05
+                });
+            }
+
+            crackGeo.setAttribute('position', new THREE.BufferAttribute(crackPos, 3));
+            const crackMat = new THREE.PointsMaterial({
+                color: 0xd4f1ff,
+                size: 0.04,
+                transparent: true,
+                opacity: 1,
+                blending: THREE.AdditiveBlending
+            });
+            const crackParticles = new THREE.Points(crackGeo, crackMat);
+            scene.add(crackParticles);
+
+            // Animate and remove
+            let frame = 0;
+            function animateCrack() {
+                frame++;
+                const positions = crackParticles.geometry.attributes.position.array;
+                for (let i = 0; i < count; i++) {
+                    positions[i * 3] += crackVel[i].x;
+                    positions[i * 3 + 1] += crackVel[i].y;
+                    positions[i * 3 + 2] += crackVel[i].z;
+                }
+                crackParticles.geometry.attributes.position.needsUpdate = true;
+                crackMat.opacity -= 0.02;
+                crackParticles.scale.multiplyScalar(0.98);
+
+                if (frame < 60) {
+                    requestAnimationFrame(animateCrack);
+                } else {
+                    scene.remove(crackParticles);
+                    crackGeo.dispose();
+                    crackMat.dispose();
+                }
+            }
+            animateCrack();
+        }
+
+        // ─── Frost Canvas Effect ───
+        const frostCanvas = document.getElementById('frost-canvas');
+        const frostCtx = frostCanvas.getContext('2d');
+        let frostDots = [];
+
+        function resizeFrost() {
+            frostCanvas.width = window.innerWidth;
+            frostCanvas.height = window.innerHeight;
+
+            // Regenerate frost dots
+            frostDots = [];
+            const numDots = Math.floor((frostCanvas.width * frostCanvas.height) / 600);
+            for (let i = 0; i < numDots; i++) {
+                frostDots.push({
+                    x: Math.random() * frostCanvas.width,
+                    y: Math.random() * frostCanvas.height,
+                    r: Math.random() * 2 + 0.5,
+                    alpha: Math.random() * 0.3 + 0.05,
+                    growth: Math.random() * 0.01
+                });
+            }
+        }
+        resizeFrost();
+        window.addEventListener('resize', resizeFrost);
+
+        function renderFrost() {
+            frostCtx.clearRect(0, 0, frostCanvas.width, frostCanvas.height);
+
+            // Mouse clears frost in a radius
+            const clearRadius = 150;
+
+            frostDots.forEach(dot => {
+                // Check if mouse is near
+                const dx = dot.x - mouseHeat.x;
+                const dy = dot.y - mouseHeat.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                let alpha = dot.alpha;
+                if (dist < clearRadius) {
+                    alpha *= dist / clearRadius;
+                    // Grow frost back slowly
+                    if (dist > clearRadius * 0.8) {
+                        dot.alpha = Math.min(0.4, dot.alpha + dot.growth);
+                    }
+                }
+
+                const gradient = frostCtx.createRadialGradient(dot.x, dot.y, 0, dot.x, dot.y, dot.r);
+                gradient.addColorStop(0, `rgba(212, 241, 255, ${alpha})`);
+                gradient.addColorStop(1, 'rgba(212, 241, 255, 0)');
+
+                frostCtx.beginPath();
+                frostCtx.arc(dot.x, dot.y, dot.r, 0, Math.PI * 2);
+                frostCtx.fillStyle = gradient;
+                frostCtx.fill();
+            });
+        }
+
+        // ─── Main Animation Loop ───
+        const clock = new THREE.Clock();
+        let isReleased = false;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+            const delta = clock.getDelta();
+
+            // Update countdown once per second
+            if (Math.floor(time * 10) % 10 === 0) {
+                isReleased = updateCountdown();
+            }
+
+            // Adjust melt from mouse heat
+            let meltOverride = currentMeltProgress;
+            if (mouseHeat.active) {
+                meltOverride = Math.min(1, currentMeltProgress + 0.15);
+            }
+
+            // Update uniforms
+            iceMaterial.uniforms.uTime.value = time;
+            iceMaterial.uniforms.uMeltProgress.value = meltOverride;
+            iceMaterial.uniforms.uRevealProgress.value = currentRevealProgress;
+            iceMaterial.uniforms.uCracks.value = currentCracks;
+            iceMaterial.uniforms.uCameraPosition.value = camera.position;
+
+            // Gold core reveal
+            goldCore.material.emissiveIntensity = 0.2 + currentRevealProgress * 1.0;
+            goldCore.scale.setScalar(0.5 + currentRevealProgress * 0.5);
+
+            // Melt pool
+            meltPool.material.opacity = 0.3 + meltOverride * 0.5;
+            meltPool.scale.setScalar(0.5 + meltOverride * 1.0);
+
+            // Ripple ring
+            if (meltOverride > 0.5) {
+                rippleRing.visible = true;
+                rippleRing.material.opacity = Math.sin(time * 2) * 0.3 + 0.2;
+                const r = 1 + Math.sin(time) * 0.3 + meltOverride;
+                rippleRing.geometry = new THREE.RingGeometry(r - 0.05, r, 64);
+            } else {
+                rippleRing.visible = false;
+            }
+
+            // Floating particles
+            const particlePositions = particles.geometry.attributes.position.array;
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                particlePositions[i3 + 1] += Math.sin(time + i) * 0.002;
+                particlePositions[i3] += Math.cos(time * 0.5 + i) * 0.001;
+                particlePositions[i3 + 2] += Math.sin(time * 0.3 + i) * 0.001;
+
+                // Reset if out of bounds
+                if (particlePositions[i3 + 1] > 3) particlePositions[i3 + 1] = -3;
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+            particles.material.opacity = 0.6 + Math.sin(time * 2) * 0.1;
+
+            // Post processing uniforms
+            chromaticPass.uniforms.uMeltProgress.value = meltOverride;
+
+            // Controls
+            controls.update();
+
+            // Frost overlay
+            renderFrost();
+
+            // Render
+            if (isReleased) {
+                bloomPass.strength = 1.5 + Math.sin(time * 3) * 0.5;
+            }
+            composer.render();
+        }
+
+        // ─── Window Resize ───
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ─── Hide Loading ───
+        setTimeout(() => {
+            document.getElementById('loading').style.opacity = '0';
+            document.getElementById('loading').style.transition = 'opacity 1s ease';
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+            }, 1000);
+        }, 2000);
+
+        // ─── Start ───
+        updateCountdown();
+        animate();
+
+        console.log('ICEMAN countdown loaded. Hover over the ice cube to accelerate melting. Click to crack. Double-click to reset view.');
+    </script>
+</body>
+</html>
