@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ICEMAN — May 15</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Manrope:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after {
             margin: 0;
@@ -25,8 +27,20 @@
         body {
             overflow: hidden;
             background: var(--night);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Manrope', sans-serif;
             cursor: crosshair;
+        }
+
+        /* Atmospheric Grain */
+        .grain-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 99;
+            opacity: 0.035;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+            background-size: 256px 256px;
+            mix-blend-mode: overlay;
         }
 
         /* Frost Overlay */
@@ -52,7 +66,10 @@
             flex-direction: column;
             justify-content: space-between;
             padding: 3vh 4vw;
+            opacity: 0;
+            transition: opacity 1.5s ease 0.3s;
         }
+        .ui-overlay.loaded { opacity: 1; }
 
         .header {
             text-align: center;
@@ -62,7 +79,7 @@
         .album-title {
             font-family: 'Cinzel', serif;
             font-size: clamp(2.5rem, 8vw, 6rem);
-            font-weight: 900;
+            font-weight: 400;
             background: linear-gradient(135deg, var(--ice) 0%, var(--ice-deep) 30%, var(--gold) 60%, var(--gold-bright) 100%);
             -webkit-background-clip: text;
             background-clip: text;
@@ -80,12 +97,13 @@
         }
 
         .artist-name {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Manrope', sans-serif;
             font-size: clamp(0.8rem, 2vw, 1.2rem);
             color: rgba(212, 241, 255, 0.5);
             letter-spacing: 0.5em;
             text-transform: uppercase;
             margin-top: 0.5rem;
+            font-weight: 300;
         }
 
         /* Countdown */
@@ -115,6 +133,7 @@
             text-shadow: 0 0 20px rgba(126, 200, 227, 0.5), 0 0 60px rgba(126, 200, 227, 0.2);
             min-width: 2ch;
             position: relative;
+            transition: color 0.6s ease, text-shadow 0.6s ease;
         }
 
         .time-digit.gold-shift {
@@ -123,11 +142,13 @@
         }
 
         .time-label {
+            font-family: 'Manrope', sans-serif;
             font-size: clamp(0.6rem, 1.2vw, 0.85rem);
             color: rgba(212, 241, 255, 0.4);
             letter-spacing: 0.2em;
             text-transform: uppercase;
             margin-top: 0.5rem;
+            font-weight: 300;
         }
 
         /* Progress bar */
@@ -142,6 +163,7 @@
             background: rgba(212, 241, 255, 0.1);
             border-radius: 3px;
             overflow: hidden;
+            box-shadow: 0 0 10px rgba(212, 241, 255, 0.05);
         }
 
         .progress-fill {
@@ -150,15 +172,23 @@
             border-radius: 3px;
             transition: width 1s ease;
             box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            animation: progressPulse 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes progressPulse {
+            0% { filter: brightness(1); box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+            100% { filter: brightness(1.3); box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
         }
 
         .melt-status {
+            font-family: 'Manrope', sans-serif;
             font-size: 0.75rem;
             color: rgba(212, 241, 255, 0.35);
             letter-spacing: 0.15em;
             text-transform: uppercase;
             margin-top: 0.75rem;
             text-align: center;
+            font-weight: 300;
         }
 
         /* Interaction hint */
@@ -167,13 +197,17 @@
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
+            font-family: 'Manrope', sans-serif;
             font-size: 0.75rem;
             color: rgba(212, 241, 255, 0.2);
             letter-spacing: 0.2em;
             text-transform: uppercase;
             pointer-events: none;
             animation: pulse 3s ease-in-out infinite;
+            opacity: 0;
+            transition: opacity 1s ease 1.2s;
         }
+        .hint.loaded { opacity: 0.2; }
 
         @keyframes pulse {
             0%, 100% { opacity: 0.2; }
@@ -221,11 +255,13 @@
         }
 
         .released-sub {
+            font-family: 'Manrope', sans-serif;
             font-size: clamp(0.9rem, 2vw, 1.3rem);
             color: rgba(255, 215, 0, 0.6);
             letter-spacing: 0.5em;
             text-transform: uppercase;
             margin-top: 1rem;
+            font-weight: 300;
         }
 
         /* Loading */
@@ -286,6 +322,9 @@
         <div class="loading-bar"><div class="loading-fill"></div></div>
     </div>
 
+    <!-- Atmospheric Grain -->
+    <div class="grain-overlay"></div>
+
     <!-- Frost Overlay -->
     <div class="frost-layer" id="frost-layer">
         <canvas id="frost-canvas"></canvas>
@@ -295,7 +334,7 @@
     <div id="canvas-container"></div>
 
     <!-- UI Overlay -->
-    <div class="ui-overlay">
+    <div class="ui-overlay" id="ui-overlay">
         <div class="header">
             <h1 class="album-title">ICEMAN</h1>
             <p class="artist-name">Dropping May 15, 2026</p>
@@ -355,6 +394,7 @@
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
         // ─── Configuration ───
         const RELEASE_DATE = new Date('2026-05-15T00:00:00Z');
@@ -379,6 +419,12 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
+        // ─── Environment Map (Room Environment) ───
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+        const roomEnvironment = new RoomEnvironment();
+        scene.environment = pmremGenerator.fromScene(roomEnvironment, 0.04).texture;
+
         // ─── Controls ───
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
@@ -390,44 +436,29 @@
         controls.autoRotateSpeed = 0.5;
 
         // ─── Lighting ───
-        // Cold ambient
-        scene.add(new THREE.AmbientLight(0x2a5d7a, 0.6));
+        scene.add(new THREE.AmbientLight(0x2a5d7a, 0.4));
 
-        // Icy key light
-        const keyLight = new THREE.DirectionalLight(0xb8e4f0, 1.5);
+        const keyLight = new THREE.DirectionalLight(0xb8e4f0, 1.2);
         keyLight.position.set(3, 5, 4);
         keyLight.castShadow = true;
         keyLight.shadow.mapSize.width = 2048;
         keyLight.shadow.mapSize.height = 2048;
         scene.add(keyLight);
 
-        // Cold fill
-        const fillLight = new THREE.PointLight(0x7ec8e3, 0.8, 15);
+        const fillLight = new THREE.PointLight(0x7ec8e3, 0.6, 15);
         fillLight.position.set(-3, 2, -2);
         scene.add(fillLight);
 
-        // Gold rim light
-        const rimLight = new THREE.DirectionalLight(0xffd700, 0.6);
+        const rimLight = new THREE.DirectionalLight(0xffd700, 0.5);
         rimLight.position.set(-2, 3, -4);
         scene.add(rimLight);
 
-        // Warm under-glow for melt pool
-        const meltLight = new THREE.PointLight(0xffaa44, 0.4, 5);
+        const meltLight = new THREE.PointLight(0xffaa44, 0.3, 5);
         meltLight.position.set(0, -1.5, 0);
         scene.add(meltLight);
 
-        // ─── Ice Material Shader ───
-        const iceVertexShader = `
-            varying vec3 vPosition;
-            varying vec3 vNormal;
-            varying vec3 vViewPosition;
-            varying vec2 vUv;
-
-            uniform float uTime;
-            uniform float uMeltProgress;
-            uniform float uCracks;
-
-            // Simplex noise function
+        // ─── Simplex Noise ───
+        const noiseCommon = `
             vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
             vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
             vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
@@ -475,41 +506,59 @@
                 m = m * m;
                 return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
             }
+        `;
+
+        // ─── Ice Material Shader ───
+        const iceVertexShader = `
+            ${noiseCommon}
+            varying vec3 vPosition;
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+            varying vec2 vUv;
+
+            uniform float uTime;
+            uniform float uMeltProgress;
+            uniform float uCracks;
 
             void main() {
                 vUv = uv;
                 vNormal = normalize(normalMatrix * normal);
                 vec3 pos = position;
 
-                // Melting effect - round the cube
+                // --- Initial Organic Shape (Low frequency noise) ---
+                float shapeNoise = snoise(position * 1.2) * 0.05;
+                pos += normal * shapeNoise;
+
+                // --- Melting ---
+                float meltFactor = uMeltProgress * 0.65;
                 float noise = snoise(pos * 3.0 + uTime * 0.1) * 0.5 + 0.5;
 
-                // As it melts:
-                // 1. Edges get rounded
-                // 2. Sides shrink toward center
-                // 3. Irregular surface forms
-                float meltFactor = uMeltProgress * 0.6;
-
-                // Round edges
+                // Round edges - stronger at corners, less at flat faces
                 vec3 absPos = abs(pos);
                 float edgeDist = max(max(absPos.x, absPos.y), absPos.z);
-                edgeDist = smoothstep(0.0, 1.0, edgeDist);
-                pos += normal * (noise * meltFactor * 0.15);
+                float edgeFactor = pow(smoothstep(0.0, 1.0, edgeDist), 2.5);
+                pos += normal * (noise * meltFactor * 0.2 * edgeFactor);
 
-                // Scale down as melting
-                float scale = 1.0 - uMeltProgress * 0.5;
-                pos *= scale;
-
-                // Bottom melts faster - water forms
+                // Drip & Flatten at bottom
+                float dripNoise = snoise(pos * 2.0 + vec3(0.0, uTime * 0.12, 0.0));
                 if (pos.y < 0.0) {
-                    pos.y *= 1.0 - uMeltProgress * 0.3;
-                    pos.y -= uMeltProgress * 0.2;
+                    pos.y *= 1.0 - uMeltProgress * 0.35; // Flatten bottom
+                    pos.y -= meltFactor * dripNoise * 0.35; // Irregular drip
+                    pos.x += meltFactor * dripNoise * 0.2; // Splay at base
+                    pos.z += meltFactor * dripNoise * 0.2;
                 }
 
-                // Crack displacement
+                // Scale down - melt shrinks more vertically
+                float scaleY = 1.0 - uMeltProgress * 0.45;
+                float scaleXZ = 1.0 - uMeltProgress * 0.15; // Width decreases less
+                pos.x *= scaleXZ;
+                pos.z *= scaleXZ;
+                pos.y *= scaleY;
+
+                // --- Crack Displacement ---
                 float crackNoise = snoise(pos * 5.0);
                 float crackAmount = uCracks * smoothstep(0.3, 0.7, abs(crackNoise));
-                pos += normal * crackAmount * 0.02;
+                pos += normal * crackAmount * 0.03;
 
                 vPosition = (modelMatrix * vec4(pos, 1.0)).xyz;
                 vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
@@ -518,7 +567,23 @@
             }
         `;
 
+        // FBM helper for fragment shader
+        const fbmFunction = `
+            float fbm(vec3 p) {
+                float value = 0.0;
+                float amplitude = 0.5;
+                for (int i = 0; i < 4; i++) {
+                    value += amplitude * snoise(p);
+                    p *= 2.0;
+                    amplitude *= 0.5;
+                }
+                return value;
+            }
+        `;
+
         const iceFragmentShader = `
+            ${noiseCommon}
+            ${fbmFunction}
             varying vec3 vPosition;
             varying vec3 vNormal;
             varying vec3 vViewPosition;
@@ -528,69 +593,86 @@
             uniform float uMeltProgress;
             uniform float uRevealProgress;
             uniform float uCracks;
-            uniform vec3 uCameraPosition;
-
-            float fresnel(float cosTheta, float power) {
-                return pow(abs(1.0 - cosTheta), power);
-            }
+            uniform vec3 uBackgroundColor;
 
             void main() {
                 vec3 viewDirection = normalize(vViewPosition);
                 vec3 normal = normalize(vNormal);
                 float cosTheta = max(dot(normal, viewDirection), 0.0);
 
-                // Ice color
-                vec3 iceWhite = vec3(0.95, 0.98, 1.0);
-                vec3 iceBlue = vec3(0.49, 0.78, 0.89);
-                vec3 iceDeep = vec3(0.16, 0.36, 0.48);
-                vec3 iceShadow = vec3(0.04, 0.05, 0.10);
-                vec3 iceTransparent = vec3(0.85, 0.93, 0.97);
+                // --- Ice Colors ---
+                vec3 iceWhite   = vec3(0.96, 0.99, 1.00);
+                vec3 iceBlue    = vec3(0.45, 0.75, 0.92);
+                vec3 iceDeep    = vec3(0.12, 0.28, 0.42);
+                vec3 iceShadow  = vec3(0.02, 0.04, 0.08);
+                vec3 iceTransparent = vec3(0.88, 0.95, 0.98);
 
-                // Gold color for revealed core
-                vec3 goldBright = vec3(1.0, 0.95, 0.63);
-                vec3 goldMain = vec3(1.0, 0.84, 0.0);
-                vec3 goldDark = vec3(0.85, 0.65, 0.12);
+                // --- Gold Colors ---
+                vec3 goldBright = vec3(1.0, 0.95, 0.70);
+                vec3 goldMain   = vec3(1.0, 0.84, 0.0);
+                vec3 goldDark   = vec3(0.80, 0.60, 0.10);
 
-                // Fresnel effect for ice
-                float fresnelFactor = fresnel(cosTheta, 2.5);
-
-                // Inner glow as gold reveals
-                float goldReveal = smoothstep(0.3, 1.0, uRevealProgress);
-                float innerGlow = (1.0 - cosTheta * cosTheta) * goldReveal;
-
-                // Surface color
+                // --- Fresnel ---
+                float fresnelFactor = pow(abs(1.0 - cosTheta), 4.0);
                 vec3 surfaceColor = mix(iceDeep, iceWhite, fresnelFactor);
-                surfaceColor = mix(surfaceColor, iceTransparent, fresnelFactor * 0.6);
-                surfaceColor = mix(surfaceColor, goldMain, innerGlow * 0.7);
+                // Center is denser/darker blue
+                surfaceColor = mix(surfaceColor, iceBlue * 0.8, (1.0 - fresnelFactor) * 0.5);
+                surfaceColor = mix(surfaceColor, iceTransparent, fresnelFactor * 0.4);
 
-                // Specular highlights (icy)
-                vec3 halfVector = normalize(normalize(vec3(3.0, 5.0, 4.0)) + viewDirection);
-                float specAngle = max(dot(normal, halfVector), 0.0);
-                float specular = pow(specAngle, 128.0) * 1.5;
+                // --- Subsurface Scattering (Fake) ---
+                vec3 lightDir = normalize(vec3(3.0, 5.0, 4.0));
+                vec3 backLightDir = -lightDir;
+                float sss = pow(max(dot(normal, backLightDir), 0.0), 1.2) * 0.5;
+                surfaceColor += iceBlue * sss * 0.6;
 
-                // Gold specular
+                // --- Internal Cloudiness ---
+                float cloud = fbm(vPosition * 3.0 + vec3(uTime * 0.02));
+                float cloudFine = snoise(vPosition * 12.0);
+                float cloudPattern = smoothstep(0.3, 0.7, cloud * 0.6 + cloudFine * 0.4);
+                surfaceColor = mix(surfaceColor, iceWhite, cloudPattern * 0.15);
+                surfaceColor = mix(surfaceColor, iceDeep, cloudPattern * 0.05);
+
+                // --- Gold Reveal (Inner Glow) ---
+                float goldReveal = smoothstep(0.2, 1.0, uRevealProgress);
+                float innerGlow = (1.0 - cosTheta * cosTheta) * goldReveal;
+                surfaceColor = mix(surfaceColor, goldMain, innerGlow * 0.8);
+
+                // --- Specular (Ice Crystal Highlights) ---
+                vec3 halfVec = normalize(lightDir + viewDirection);
+                float specAngle = max(dot(normal, halfVec), 0.0);
+                float specular1 = pow(specAngle, 300.0) * 1.2;
+                float specular2 = pow(specAngle, 48.0) * 0.4;
+                surfaceColor += iceWhite * (specular1 + specular2);
+
+                // --- Gold Specular ---
                 vec3 goldHalf = normalize(normalize(vec3(-2.0, 3.0, -4.0)) + viewDirection);
                 float goldSpecAngle = max(dot(normal, goldHalf), 0.0);
-                float goldSpecular = pow(goldSpecAngle, 64.0) * goldReveal * 2.0;
+                float goldSpecular = pow(goldSpecAngle, 64.0) * goldReveal * 2.5;
+                surfaceColor += goldBright * goldSpecular;
 
-                vec3 color = surfaceColor * 0.7 + specular * iceWhite * 0.5 + goldSpecular * goldBright;
-                color += iceShadow * (1.0 - cosTheta) * 0.15;
+                // --- Transmission / Density ---
+                float density = pow(1.0 - cosTheta, 0.5);
+                surfaceColor = mix(surfaceColor, iceDeep * 0.5, density * 0.2 * (1.0 - uMeltProgress));
 
-                // Crack lines
-                float crackPattern = abs(fract(vPosition.x * 5.0 + vPosition.y * 3.0) - 0.5) * 2.0;
-                float crackLine = smoothstep(0.98, 1.0, crackPattern) * uCracks;
-                color = mix(color, iceShadow, crackLine * 0.5);
+                // --- Cracks ---
+                float crackPattern = abs(fract(vPosition.x * 5.0 + vPosition.y * 3.0 + vPosition.z * 2.0) - 0.5) * 2.0;
+                float crackLine = smoothstep(0.95, 1.0, crackPattern) * uCracks;
+                surfaceColor = mix(surfaceColor, iceShadow, crackLine * 0.6);
 
-                // Caustic light pattern inside
-                float causticPattern = sin(vPosition.x * 10.0 + uTime) * sin(vPosition.z * 10.0 + uTime * 0.7) * 0.5 + 0.5;
-                color += iceBlue * causticPattern * 0.05 * (1.0 - uMeltProgress);
+                // --- Caustics ---
+                float causticPattern = sin(vPosition.x * 10.0 + uTime) * sin(vPosition.z * 8.0 + uTime * 0.7);
+                causticPattern += sin(vPosition.y * 6.0 - uTime * 0.5) * 0.5;
+                causticPattern = causticPattern * 0.5 + 0.5;
+                causticPattern = pow(causticPattern, 3.0);
+                surfaceColor += iceBlue * causticPattern * 0.08 * (1.0 - uMeltProgress);
 
-                // Final alpha for ice transparency
-                float alpha = mix(0.65, 0.95, fresnelFactor);
+                // --- Alpha ---
+                float alpha = mix(0.45, 0.92, fresnelFactor);
                 alpha = mix(alpha, 1.0, goldReveal);
-                alpha = mix(alpha, 0.0, uMeltProgress * 0.2); // Gets clearer as it melts
+                alpha = mix(alpha, 0.35, uMeltProgress * 0.3);
+                alpha = mix(alpha, min(alpha + 0.1, 0.95), sss);
 
-                gl_FragColor = vec4(color, min(alpha, 0.92));
+                gl_FragColor = vec4(surfaceColor, min(alpha, 0.92));
             }
         `;
 
@@ -600,7 +682,7 @@
             uMeltProgress: { value: 0 },
             uRevealProgress: { value: 0 },
             uCracks: { value: 0 },
-            uCameraPosition: { value: camera.position }
+            uBackgroundColor: { value: new THREE.Color(0x060a14) }
         };
 
         const iceMaterial = new THREE.ShaderMaterial({
@@ -619,15 +701,42 @@
         iceCube.castShadow = true;
         scene.add(iceCube);
 
+        // ─── Internal Air Bubbles ───
+        const bubbleCount = 50;
+        const bubbleGeo = new THREE.SphereGeometry(0.012, 6, 6);
+        const bubbleMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transmission: 1.0,
+            roughness: 0.0,
+            ior: 1.0,
+            thickness: 0.02,
+            transparent: true,
+            opacity: 0.45,
+            side: THREE.DoubleSide
+        });
+        const bubbles = new THREE.InstancedMesh(bubbleGeo, bubbleMat, bubbleCount);
+        const dummy = new THREE.Object3D();
+        const bubbleData = [];
+        for (let i = 0; i < bubbleCount; i++) {
+            const x = (Math.random() - 0.5) * 1.0;
+            const y = (Math.random() - 0.5) * 1.0;
+            const z = (Math.random() - 0.5) * 1.0;
+            dummy.position.set(x, y, z);
+            dummy.updateMatrix();
+            bubbles.setMatrixAt(i, dummy.matrix);
+            bubbleData.push({ x, y, z, speed: 0.15 + Math.random() * 0.25, phase: Math.random() * Math.PI * 2 });
+        }
+        iceCube.add(bubbles);
+
         // ─── Gold Core (Inner Cube) ───
         const goldGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.7, 32, 32, 32);
         const goldMaterial = new THREE.MeshPhysicalMaterial({
             color: 0xffd700,
             metalness: 1.0,
-            roughness: 0.15,
+            roughness: 0.1,
             emissive: 0xffaa00,
-            emissiveIntensity: 0.2,
-            envMapIntensity: 1.5,
+            emissiveIntensity: 0.3,
+            envMapIntensity: 2.0,
             clearcoat: 1.0,
             clearcoatRoughness: 0.05
         });
@@ -636,16 +745,27 @@
         goldCore.castShadow = true;
         scene.add(goldCore);
 
-        // ─── Meltwater Pool (Animated Plane) ───
+        // ─── Gold Spotlight onto Melt Pool ───
+        const goldSpot = new THREE.SpotLight(0xffaa00, 4, 8, Math.PI / 4, 0.6, 1.5);
+        goldSpot.position.set(0, 0.5, 0);
+        goldSpot.target.position.set(0, -0.7, 0);
+        scene.add(goldSpot);
+        scene.add(goldSpot.target);
+
+        // ─── Meltwater Pool ───
         const poolGeometry = new THREE.CircleGeometry(2.5, 64);
         const poolMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x1a3040,
-            metalness: 0.4,
-            roughness: 0.1,
+            color: 0x0a1929,
+            metalness: 0.05,
+            roughness: 0.04,
             transparent: true,
-            opacity: 0.7,
-            envMapIntensity: 0.8,
-            clearcoat: 0.8
+            opacity: 0.85,
+            envMapIntensity: 1.5,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.02,
+            transmission: 0.1,
+            ior: 1.33,
+            thickness: 0.5
         });
         const meltPool = new THREE.Mesh(poolGeometry, poolMaterial);
         meltPool.rotation.x = -Math.PI / 2;
@@ -696,16 +816,14 @@
         // ─── Post Processing ───
         const composer = new EffectComposer(renderer);
 
-        // Render pass
         const renderPass = new RenderPass(scene, camera);
         composer.addPass(renderPass);
 
-        // Bloom pass (glow)
         const bloomPass = new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.4,   // strength
-            0.8,   // radius
-            0.8    // threshold
+            0.4,
+            0.8,
+            0.8
         );
         composer.addPass(bloomPass);
 
@@ -755,7 +873,6 @@
             const distance = RELEASE_DATE - now;
 
             if (distance <= 0) {
-                // Released!
                 document.getElementById('days').textContent = '00';
                 document.getElementById('hours').textContent = '00';
                 document.getElementById('minutes').textContent = '00';
@@ -784,7 +901,6 @@
             document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
             document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
 
-            // Calculate progress
             const elapsed = now - START_DATE;
             const progress = Math.max(0, Math.min(1, elapsed / TOTAL_DURATION));
 
@@ -792,7 +908,6 @@
             currentRevealProgress = progress > 0.5 ? (progress - 0.5) * 2 : 0;
             currentCracks = progress > 0.6 ? (progress - 0.6) * 2.5 : 0;
 
-            // Update UI
             document.getElementById('progress-fill').style.width = `${progress * 100}%`;
 
             if (progress > 0.9) {
@@ -816,7 +931,6 @@
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
-            // Heat effect
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(iceCube);
             mouseHeat.active = intersects.length > 0;
@@ -831,14 +945,11 @@
             if (intersects.length > 0 && Date.now() - lastCrackTime > 300) {
                 currentCracks = Math.min(1, currentCracks + 0.15);
                 lastCrackTime = Date.now();
-
-                // Spawn crack particles at click point
                 spawnCrackParticles(intersects[0].point);
             }
         });
 
         document.addEventListener('dblclick', () => {
-            // Reset orbit to default
             controls.reset();
         });
 
@@ -871,7 +982,6 @@
             const crackParticles = new THREE.Points(crackGeo, crackMat);
             scene.add(crackParticles);
 
-            // Animate and remove
             let frame = 0;
             function animateCrack() {
                 frame++;
@@ -904,8 +1014,6 @@
         function resizeFrost() {
             frostCanvas.width = window.innerWidth;
             frostCanvas.height = window.innerHeight;
-
-            // Regenerate frost dots
             frostDots = [];
             const numDots = Math.floor((frostCanvas.width * frostCanvas.height) / 600);
             for (let i = 0; i < numDots; i++) {
@@ -923,29 +1031,21 @@
 
         function renderFrost() {
             frostCtx.clearRect(0, 0, frostCanvas.width, frostCanvas.height);
-
-            // Mouse clears frost in a radius
             const clearRadius = 150;
-
             frostDots.forEach(dot => {
-                // Check if mouse is near
                 const dx = dot.x - mouseHeat.x;
                 const dy = dot.y - mouseHeat.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-
                 let alpha = dot.alpha;
                 if (dist < clearRadius) {
                     alpha *= dist / clearRadius;
-                    // Grow frost back slowly
                     if (dist > clearRadius * 0.8) {
                         dot.alpha = Math.min(0.4, dot.alpha + dot.growth);
                     }
                 }
-
                 const gradient = frostCtx.createRadialGradient(dot.x, dot.y, 0, dot.x, dot.y, dot.r);
                 gradient.addColorStop(0, `rgba(212, 241, 255, ${alpha})`);
                 gradient.addColorStop(1, 'rgba(212, 241, 255, 0)');
-
                 frostCtx.beginPath();
                 frostCtx.arc(dot.x, dot.y, dot.r, 0, Math.PI * 2);
                 frostCtx.fillStyle = gradient;
@@ -959,16 +1059,13 @@
 
         function animate() {
             requestAnimationFrame(animate);
-
             const time = clock.getElapsedTime();
             const delta = clock.getDelta();
 
-            // Update countdown once per second
             if (Math.floor(time * 10) % 10 === 0) {
                 isReleased = updateCountdown();
             }
 
-            // Adjust melt from mouse heat
             let meltOverride = currentMeltProgress;
             if (mouseHeat.active) {
                 meltOverride = Math.min(1, currentMeltProgress + 0.15);
@@ -979,14 +1076,32 @@
             iceMaterial.uniforms.uMeltProgress.value = meltOverride;
             iceMaterial.uniforms.uRevealProgress.value = currentRevealProgress;
             iceMaterial.uniforms.uCracks.value = currentCracks;
-            iceMaterial.uniforms.uCameraPosition.value = camera.position;
 
-            // Gold core reveal
-            goldCore.material.emissiveIntensity = 0.2 + currentRevealProgress * 1.0;
+            // Gold core
+            goldCore.material.emissiveIntensity = 0.3 + currentRevealProgress * 1.2;
             goldCore.scale.setScalar(0.5 + currentRevealProgress * 0.5);
 
+            // Gold spotlight flicker (caustic feel)
+            goldSpot.intensity = 3 + Math.sin(time * 3) * 1.0 + Math.cos(time * 5.7) * 0.5;
+            goldSpot.color.setHSL(0.12, 1.0, 0.5 + Math.sin(time * 2) * 0.05);
+
+            // Bubbles
+            for (let i = 0; i < bubbleCount; i++) {
+                const d = bubbleData[i];
+                const t = time * d.speed + d.phase;
+                dummy.position.set(
+                    d.x + Math.sin(t) * 0.02,
+                    d.y + Math.cos(t * 0.7) * 0.03,
+                    d.z + Math.sin(t * 0.5) * 0.02
+                );
+                dummy.scale.setScalar(0.5 + Math.sin(t * 2) * 0.5);
+                dummy.updateMatrix();
+                bubbles.setMatrixAt(i, dummy.matrix);
+            }
+            bubbles.instanceMatrix.needsUpdate = true;
+
             // Melt pool
-            meltPool.material.opacity = 0.3 + meltOverride * 0.5;
+            meltPool.material.opacity = 0.3 + meltOverride * 0.55;
             meltPool.scale.setScalar(0.5 + meltOverride * 1.0);
 
             // Ripple ring
@@ -1006,8 +1121,6 @@
                 particlePositions[i3 + 1] += Math.sin(time + i) * 0.002;
                 particlePositions[i3] += Math.cos(time * 0.5 + i) * 0.001;
                 particlePositions[i3 + 2] += Math.sin(time * 0.3 + i) * 0.001;
-
-                // Reset if out of bounds
                 if (particlePositions[i3 + 1] > 3) particlePositions[i3 + 1] = -3;
             }
             particles.geometry.attributes.position.needsUpdate = true;
@@ -1016,13 +1129,9 @@
             // Post processing uniforms
             chromaticPass.uniforms.uMeltProgress.value = meltOverride;
 
-            // Controls
             controls.update();
-
-            // Frost overlay
             renderFrost();
 
-            // Render
             if (isReleased) {
                 bloomPass.strength = 1.5 + Math.sin(time * 3) * 0.5;
             }
@@ -1037,12 +1146,14 @@
             composer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // ─── Hide Loading ───
+        // ─── Hide Loading & Reveal UI ───
         setTimeout(() => {
             document.getElementById('loading').style.opacity = '0';
             document.getElementById('loading').style.transition = 'opacity 1s ease';
             setTimeout(() => {
                 document.getElementById('loading').style.display = 'none';
+                document.getElementById('ui-overlay').classList.add('loaded');
+                document.getElementById('hint').classList.add('loaded');
             }, 1000);
         }, 2000);
 
